@@ -1,4 +1,4 @@
-import { SessionLog, WeekPhase, ExerciseHistoryRecord } from '../types/workout';
+import { SessionLog, WeekPhase, ExerciseHistoryRecord, ExerciseSet } from '../types/workout';
 import { ONE_WORKOUT_DAYS } from '../data/onePlanData';
 
 const STORAGE_KEYS = {
@@ -133,9 +133,17 @@ export function deleteSessionLog(sessionId: string): void {
   }
 }
 
-export function getCustomExerciseOrder(dayId: string): string[] | null {
+export interface ActiveWorkoutDraft {
+  dayId: string;
+  setsState: Record<string, ExerciseSet[]>;
+  completedMobility: Record<string, boolean>;
+  completedActivation: Record<string, boolean>;
+  sessionSeconds: number;
+}
+
+export function getActiveWorkoutDraft(dayId: string): ActiveWorkoutDraft | null {
   try {
-    const raw = localStorage.getItem(`${STORAGE_KEYS.CUSTOM_EXERCISE_ORDER}_${dayId}`);
+    const raw = localStorage.getItem(`gimyone_active_draft_${dayId}`);
     if (!raw) return null;
     return JSON.parse(raw);
   } catch {
@@ -143,10 +151,19 @@ export function getCustomExerciseOrder(dayId: string): string[] | null {
   }
 }
 
-export function setCustomExerciseOrder(dayId: string, order: string[]): void {
+export function saveActiveWorkoutDraft(draft: ActiveWorkoutDraft): void {
   try {
-    localStorage.setItem(`${STORAGE_KEYS.CUSTOM_EXERCISE_ORDER}_${dayId}`, JSON.stringify(order));
+    localStorage.setItem(`gimyone_active_draft_${draft.dayId}`, JSON.stringify(draft));
   } catch (err) {
-    console.error('Error saving exercise order', err);
+    console.error('Error saving active draft', err);
   }
 }
+
+export function clearActiveWorkoutDraft(dayId: string): void {
+  try {
+    localStorage.removeItem(`gimyone_active_draft_${dayId}`);
+  } catch (err) {
+    console.error('Error clearing active draft', err);
+  }
+}
+

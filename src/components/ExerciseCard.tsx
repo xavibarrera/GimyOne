@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import {
-  GripVertical,
   Calculator,
   Check,
   History,
@@ -46,32 +45,26 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
   };
 
   const completedSetsCount = sets.filter((s) => s.completed).length;
-  const allCompleted = completedSetsCount === sets.length;
+  const allCompleted = sets.length > 0 && completedSetsCount === sets.length;
+  const isStarted = !allCompleted && (completedSetsCount > 0 || sets.some((s) => s.weightKg > 0));
 
   return (
     <motion.div
       layout
-      className={`rounded-2xl border transition-all duration-200 overflow-hidden ${
+      className={`rounded-2xl transition-all duration-200 overflow-hidden ${
         allCompleted
-          ? 'bg-zinc-900/60 border-emerald-500/30'
-          : 'bg-zinc-900/90 border-zinc-800 hover:border-zinc-700/80'
-      } shadow-lg`}
+          ? 'bg-zinc-900/60 border border-emerald-500/40 opacity-85'
+          : isStarted
+          ? 'bg-zinc-900 border-2 border-amber-500 shadow-lg shadow-amber-500/10'
+          : 'bg-zinc-900/90 border border-zinc-800 hover:border-zinc-700/80 shadow-md'
+      }`}
     >
       {/* Exercise Card Header (tap to toggle collapse) */}
       <div
         onClick={() => setIsExpanded(!isExpanded)}
         className="p-3.5 pb-2.5 flex items-start justify-between gap-2 cursor-pointer select-none active:bg-zinc-850/50 transition-colors"
       >
-        <div className="flex items-start gap-2.5 min-w-0">
-          {/* Drag Handle */}
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="p-1 mt-0.5 text-zinc-500 hover:text-zinc-300 cursor-grab active:cursor-grabbing rounded-lg touch-none shrink-0"
-            title="Arrastra para reordenar"
-          >
-            <GripVertical className="w-4 h-4" />
-          </div>
-
+        <div className="flex items-start gap-2 min-w-0">
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-400">
@@ -82,7 +75,13 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
                 {exercise.targetReps}
               </span>
               <span className="text-zinc-500 text-xs">·</span>
-              <span className={`text-[10px] font-mono-num font-semibold ${allCompleted ? 'text-emerald-400' : 'text-zinc-400'}`}>
+              <span className={`text-[10px] font-mono-num font-semibold ${
+                allCompleted
+                  ? 'text-emerald-400'
+                  : isStarted
+                  ? 'text-amber-400 font-bold'
+                  : 'text-zinc-400'
+              }`}>
                 {completedSetsCount}/{sets.length} series
               </span>
               {lastRecord && (

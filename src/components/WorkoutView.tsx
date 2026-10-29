@@ -1,18 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { motion, Reorder } from 'motion/react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { motion } from 'motion/react';
 import {
-  Flame,
   Clock,
-  Sparkles,
   CheckCircle2,
   Play,
-  RotateCcw,
-  Zap,
   ShieldCheck,
   ChevronDown,
   ChevronUp,
   Save,
-  Timer,
+  RotateCcw,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { ONE_WORKOUT_DAYS, WEEK_PHASES } from '../data/onePlanData';
@@ -27,8 +23,9 @@ import { ExerciseCard } from './ExerciseCard';
 import {
   getLastExerciseRecord,
   saveSessionLog,
-  getCustomExerciseOrder,
-  setCustomExerciseOrder,
+  getActiveWorkoutDraft,
+  saveActiveWorkoutDraft,
+  clearActiveWorkoutDraft,
 } from '../services/storage';
 
 interface WorkoutViewProps {
@@ -52,22 +49,6 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
 }) => {
   const currentDay = ONE_WORKOUT_DAYS.find((d) => d.id === selectedDayId) || ONE_WORKOUT_DAYS[0];
 
-  // Reorderable exercises state
-  const [exercisesOrder, setExercisesOrder] = useState<ExerciseDefinition[]>(() => {
-    const savedOrderIds = getCustomExerciseOrder(currentDay.id);
-    if (!savedOrderIds) return currentDay.exercises;
-    // Map in saved order, then append any missing
-    const ordered: ExerciseDefinition[] = [];
-    savedOrderIds.forEach((id) => {
-      const match = currentDay.exercises.find((e) => e.id === id);
-      if (match) ordered.push(match);
-    });
-    currentDay.exercises.forEach((e) => {
-      if (!ordered.some((o) => o.id === e.id)) ordered.push(e);
-    });
-    return ordered;
-  });
-
   // Keep track of sets per exercise
   const [setsState, setSetsState] = useState<Record<string, ExerciseSet[]>>({});
 
@@ -78,60 +59,73 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
 
   // Session duration timer
   const [sessionSeconds, setSessionSeconds] = useState(0);
-  const [sessionStarted, setSessionStarted] = useState(true);
 
-  // Initialize sets for current day's exercises
+  // Initialize or restore active session draft for currentDay
   useEffect(() => {
-    const savedOrderIds = getCustomExerciseOrder(currentDay.id);
-    let initialList = currentDay.exercises;
-    if (savedOrderIds) {
-      const ordered: ExerciseDefinition[] = [];
-      savedOrderIds.forEach((id) => {
-        const match = currentDay.exercises.find((e) => e.id === id);
-        if (match) ordered.push(match);
+    const existingDraft = getActiveWorkoutDraft(currentDay.id);
+
+    if (existingDraft && existingDraft.setsState) {
+      // Restore persisted in-progress session
+      setSetsState(existingDraft.setsState);
+      setCompletedMobility(existingDraft.completedMobility || {});
+      setCompletedActivation(existingDraft.completedActivation || {});
+      setSessionSeconds(existingDraft.sessionSeconds || 0);
+    } else {
+      // Initialize fresh sets with last logged weight memory
+      const initialSets: Record<string, ExerciseSet[]> = {};
+      currentDay.exercises.forEach((ex) => {
+        const lastRecord = getLastExerciseRecord(ex.id);
+        const defaultWeight = lastRecord?.weightKg ?? 0;
+
+        initialSets[ex.id] = Array.from({ length: ex.targetSets }).map((_, i) => ({
+          setNumber: i + 1,
+          weightKg: defaultWeight,
+          targetReps: ex.targetReps,
+          actualReps: lastRecord?.reps || 10,
+          completed: false,
+          rpe: 7,
+        }));
       });
-      currentDay.exercises.forEach((e) => {
-        if (!ordered.some((o) => o.id === e.id)) ordered.push(e);
-      });
-      initialList = ordered;
+      setSetsState(initialSets);
+      setCompletedMobility({});
+      setCompletedActivation({});
+      setSessionSeconds(0);
     }
-    setExercisesOrder(initialList);
-
-    // Initialize set objects
-    const newSets: Record<string, ExerciseSet[]> = {};
-    initialList.forEach((ex) => {
-      const lastRecord = getLastExerciseRecord(ex.id);
-      const defaultWeight = lastRecord?.weightKg ?? 0;
-
-      newSets[ex.id] = Array.from({ length: ex.targetSets }).map((_, i) => ({
-        setNumber: i + 1,
-        weightKg: defaultWeight,
-        targetReps: ex.targetReps,
-        actualReps: lastRecord?.reps || 10,
-        completed: false,
-        rpe: 7,
-      }));
-    });
-    setSetsState(newSets);
   }, [currentDay.id]);
+
+  // Autosave active draft in real time whenever sets, mobility, or activation change
+  useEffect(() => {
+    if (Object.keys(setsState).length === 0) return;
+
+    saveActiveWorkoutDraft({
+      dayId: currentDay.id,
+      setsState,
+      completedMobility,
+      completedActivation,
+      sessionSeconds,
+    });
+  }, [currentDay.id, setsState, completedMobility, completedActivation, sessionSeconds]);
 
   // Session timer ticker
   useEffect(() => {
-    if (!sessionStarted) return;
     const interval = setInterval(() => {
       setSessionSeconds((s) => s + 1);
     }, 1000);
     return () => clearInterval(interval);
-  }, [sessionStarted]);
+  }, []);
 
-  // Handle reorder
-  const handleReorder = (newOrder: ExerciseDefinition[]) => {
-    setExercisesOrder(newOrder);
-    setCustomExerciseOrder(
-      currentDay.id,
-      newOrder.map((e) => e.id)
-    );
-  };
+  // Sort exercises: Completed exercises automatically go to the end of the list!
+  const sortedExercises = useMemo(() => {
+    return [...currentDay.exercises].sort((a, b) => {
+      const aSets = setsState[a.id] || [];
+      const bSets = setsState[b.id] || [];
+      const aDone = aSets.length > 0 && aSets.every((s) => s.completed);
+      const bDone = bSets.length > 0 && bSets.every((s) => s.completed);
+
+      if (aDone === bDone) return 0;
+      return aDone ? 1 : -1; // completed exercises go to the bottom
+    });
+  }, [currentDay.exercises, setsState]);
 
   const updateSetField = (
     exerciseId: string,
@@ -145,13 +139,24 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
       if (updated[setIndex]) {
         updated[setIndex] = { ...updated[setIndex], [field]: value };
       }
-      return { ...prev, [exerciseId]: updated };
+      const next = { ...prev, [exerciseId]: updated };
+
+      // Immediately persist update
+      saveActiveWorkoutDraft({
+        dayId: currentDay.id,
+        setsState: next,
+        completedMobility,
+        completedActivation,
+        sessionSeconds,
+      });
+
+      return next;
     });
   };
 
   const handleFinishWorkout = () => {
     // Collect summary
-    const loggedExercises = exercisesOrder.map((ex) => {
+    const loggedExercises = currentDay.exercises.map((ex) => {
       const exSets = setsState[ex.id] || [];
       const completedSets = exSets.filter((s) => s.completed);
       const bestWeight = completedSets.length > 0 ? Math.max(...completedSets.map((s) => s.weightKg)) : 0;
@@ -178,6 +183,27 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
 
     saveSessionLog(session);
 
+    // Clear active in-progress draft once session is finalized
+    clearActiveWorkoutDraft(currentDay.id);
+
+    // Reset current sets to new clean state
+    const cleanSets: Record<string, ExerciseSet[]> = {};
+    currentDay.exercises.forEach((ex) => {
+      const lastRecord = getLastExerciseRecord(ex.id);
+      cleanSets[ex.id] = Array.from({ length: ex.targetSets }).map((_, i) => ({
+        setNumber: i + 1,
+        weightKg: lastRecord?.weightKg ?? 0,
+        targetReps: ex.targetReps,
+        actualReps: lastRecord?.reps || 10,
+        completed: false,
+        rpe: 7,
+      }));
+    });
+    setSetsState(cleanSets);
+    setCompletedMobility({});
+    setCompletedActivation({});
+    setSessionSeconds(0);
+
     confetti({
       particleCount: 100,
       spread: 70,
@@ -185,7 +211,29 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
     });
   };
 
-  const activePhase = WEEK_PHASES.find((p) => p.week === currentWeek) || WEEK_PHASES[1];
+  const handleResetSessionDraft = () => {
+    if (window.confirm('¿Deseas reiniciar los pesos y series de la sesión actual?')) {
+      clearActiveWorkoutDraft(currentDay.id);
+      const cleanSets: Record<string, ExerciseSet[]> = {};
+      currentDay.exercises.forEach((ex) => {
+        const lastRecord = getLastExerciseRecord(ex.id);
+        cleanSets[ex.id] = Array.from({ length: ex.targetSets }).map((_, i) => ({
+          setNumber: i + 1,
+          weightKg: lastRecord?.weightKg ?? 0,
+          targetReps: ex.targetReps,
+          actualReps: lastRecord?.reps || 10,
+          completed: false,
+          rpe: 7,
+        }));
+      });
+      setSetsState(cleanSets);
+      setCompletedMobility({});
+      setCompletedActivation({});
+      setSessionSeconds(0);
+    }
+  };
+
+  const activePhase = WEEK_PHASES.find((p) => p.week === currentWeek) || WEEK_PHASES[0];
   const totalSetsCount = Object.values(setsState).reduce((acc, curr) => acc + curr.length, 0);
   const completedSetsTotal = Object.values(setsState).reduce(
     (acc, curr) => acc + curr.filter((s) => s.completed).length,
@@ -364,34 +412,27 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
         )}
       </div>
 
-      {/* EXERCISES HEADER & DRAG HINT */}
+      {/* EXERCISES SECTION TITLE */}
       <div className="flex items-center justify-between pt-1">
         <div className="text-xs font-condensed font-bold text-zinc-300 uppercase tracking-wider">
-          Bloque de Fuerza ({exercisesOrder.length} Ejercicios)
+          Bloque de Fuerza ({currentDay.exercises.length} Ejercicios)
         </div>
-        <div className="text-[10px] text-zinc-500 flex items-center gap-1">
-          <span>Arrastra</span>
-          <span className="text-amber-400 font-semibold">⋮⋮</span>
-          <span>para reordenar</span>
+        <div className="text-[10px] text-zinc-500">
+          Los ejercicios completados se mueven al final
         </div>
       </div>
 
-      {/* REORDERABLE EXERCISES LIST (Drag & Drop) */}
-      <Reorder.Group
-        axis="y"
-        values={exercisesOrder}
-        onReorder={handleReorder}
-        className="space-y-3"
-      >
-        {exercisesOrder.map((exercise) => {
+      {/* NATURAL SCROLLABLE EXERCISES LIST (NO drag interference, fluid touch scroll) */}
+      <div className="space-y-3">
+        {sortedExercises.map((exercise) => {
           const lastRecord = getLastExerciseRecord(exercise.id);
           const currentSets = setsState[exercise.id] || [];
 
           return (
-            <Reorder.Item
+            <motion.div
               key={exercise.id}
-              value={exercise}
-              className="touch-none"
+              layout
+              transition={{ duration: 0.25 }}
             >
               <ExerciseCard
                 exercise={exercise}
@@ -407,10 +448,10 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
                 onOpenHistory={onOpenHistory}
                 onSetCompleted={() => onTriggerRestTimer(90)}
               />
-            </Reorder.Item>
+            </motion.div>
           );
         })}
-      </Reorder.Group>
+      </div>
 
       {/* FINISHER & CARDIO TRIGGER CARD */}
       <div className="p-4 rounded-3xl bg-zinc-900 border border-zinc-800 flex items-center justify-between gap-3 shadow-lg">
@@ -441,15 +482,25 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
         </button>
       </div>
 
-      {/* FINISH WORKOUT BUTTON */}
-      <div className="pt-2">
+      {/* SESSION ACTIONS */}
+      <div className="pt-2 space-y-2">
         <button
           onClick={handleFinishWorkout}
-          className="w-full py-4 rounded-2xl bg-zinc-900 hover:bg-zinc-850 border border-amber-500/40 text-amber-400 font-condensed font-bold text-base flex items-center justify-center gap-2 shadow-xl active:scale-[0.98] transition-transform"
+          className="w-full py-4 rounded-2xl bg-amber-500 hover:bg-amber-400 text-black font-condensed font-extrabold text-base flex items-center justify-center gap-2 shadow-xl shadow-amber-500/10 active:scale-[0.98] transition-transform"
         >
           <Save className="w-4 h-4" />
-          Guardar y Cerrar Sesión del Día
+          Guardar y Terminar Sesión
         </button>
+
+        {completedSetsTotal > 0 && (
+          <button
+            onClick={handleResetSessionDraft}
+            className="w-full py-2.5 rounded-xl bg-zinc-900/60 hover:bg-zinc-800 text-zinc-400 hover:text-rose-400 text-xs font-medium flex items-center justify-center gap-1.5 transition-colors"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            Reiniciar sesión de hoy
+          </button>
+        )}
       </div>
     </div>
   );

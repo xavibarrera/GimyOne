@@ -40,9 +40,6 @@ export const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }
               >
                 {tab.label}
               </span>
-              {isActive && (
-                <span className="absolute bottom-1 w-1 h-1 bg-amber-400 rounded-full" />
-              )}
             </button>
           );
         })}
