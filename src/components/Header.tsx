@@ -1,7 +1,8 @@
 import React from 'react';
-import { Flame, Timer, Sparkles } from 'lucide-react';
+import { Timer } from 'lucide-react';
 import { WeekPhase } from '../types/workout';
 import { WEEK_PHASES } from '../data/onePlanData';
+import { PWAInstallButton } from './PWAInstallButton';
 
 interface HeaderProps {
   currentWeek: WeekPhase;
@@ -18,7 +19,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="sticky top-0 z-30 bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800/80 pt-safe">
-      <div className="max-w-xl mx-auto h-14 px-4 flex items-center justify-between gap-4">
+      <div className="max-w-xl mx-auto h-14 px-4 flex items-center justify-between gap-3">
         {/* Zone 1: Brand Wordmark */}
         <div className="flex items-center gap-1.5 whitespace-nowrap shrink-0">
           <span className="text-xl font-condensed font-black tracking-wider text-white">
@@ -32,7 +33,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Zone 2: Current Week Phase Selector */}
         <div className="flex items-center gap-1">
           <button
-            onClick={() => onSelectWeek((currentWeek % 4 + 1) as WeekPhase)}
+            onClick={() => onSelectWeek(((currentWeek % 4) + 1) as WeekPhase)}
             className="px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-xs flex items-center gap-1.5 transition-colors"
             title="Cambiar fase semanal"
           >
@@ -46,8 +47,9 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         </div>
 
-        {/* Zone 3: Quick Rest Timer Trigger */}
-        <div className="flex items-center gap-2 shrink-0">
+        {/* Zone 3: PWA Install Button & Rest Timer */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <PWAInstallButton />
           <button
             onClick={onOpenRestTimer}
             className="p-2 text-zinc-400 hover:text-amber-400 rounded-lg hover:bg-zinc-900 active:scale-95 transition-all flex items-center gap-1"

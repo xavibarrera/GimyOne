@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="112" fill="#09090b"/>
+  <circle cx="256" cy="256" r="210" fill="none" stroke="#f59e0b" stroke-width="10" stroke-opacity="0.3"/>
+  <!-- Barbell plate graphics -->
+  <g transform="translate(256, 256)">
+    <!-- Shaft -->
+    <rect x="-170" y="-12" width="340" height="24" rx="10" fill="#71717a"/>
+    <!-- Outer collars -->
+    <rect x="-140" y="-36" width="24" height="72" rx="6" fill="#e4e4e7"/>
+    <rect x="116" y="-36" width="24" height="72" rx="6" fill="#e4e4e7"/>
+    <!-- Big Plates -->
+    <rect x="-105" y="-85" width="28" height="170" rx="8" fill="#f59e0b"/>
+    <rect x="77" y="-85" width="28" height="170" rx="8" fill="#f59e0b"/>
+    <!-- Center badge with G1 -->
+    <rect x="-60" y="-48" width="120" height="96" rx="20" fill="#18181b" stroke="#f59e0b" stroke-width="6"/>
+    <text x="0" y="20" font-family="'Barlow Condensed', -apple-system, sans-serif" font-size="62" font-weight="900" fill="#f59e0b" text-anchor="middle" letter-spacing="2">G1</text>
+  </g>
+</svg>

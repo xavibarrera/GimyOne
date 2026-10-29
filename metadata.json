@@ -2,5 +2,7 @@
   "name": "GimyOne",
   "description": "App táctil para registro y memoria inmediata de pesos, rutinas ONE Strength & Conditioning y seguimiento visual de progresión.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }
