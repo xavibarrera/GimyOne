@@ -17,8 +17,10 @@ import {
   setStoredSelectedDay,
   getStoredMonthlyPlan,
   setStoredMonthlyPlan,
+  resetStoredMonthlyPlan,
 } from './services/storage';
 import { ImportPlanModal } from './components/ImportPlanModal';
+import { SettingsView } from './components/SettingsView';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<NavTab>('rutina');
@@ -109,7 +111,7 @@ export default function App() {
         monthName={monthlyPlan.monthName}
         onOpenRestTimer={() => triggerRestTimer(90)}
         onSelectWeek={handleSelectWeek}
-        onOpenImportPlan={() => setIsImportModalOpen(true)}
+        onOpenSettings={() => setActiveTab('ajustes')}
       />
 
       {/* Main Content Area */}
@@ -155,23 +157,18 @@ export default function App() {
           />
         )}
 
-        {activeTab === 'calculadora' && (
-          <div className="p-4 max-w-xl mx-auto space-y-4 pb-28">
-            <div className="p-4 rounded-3xl bg-zinc-900 border border-zinc-800 text-center">
-              <h2 className="text-xl font-condensed font-extrabold text-white">
-                Calculadora Táctil de Discos
-              </h2>
-              <p className="text-xs text-zinc-400 mt-1">
-                Calcula la distribución exacta de discos por cada lado de la barra de forma visual.
-              </p>
-              <button
-                onClick={() => openPlateCalculator('Barra Olímpica', 70)}
-                className="mt-4 px-6 py-3 rounded-2xl bg-amber-500 text-black font-condensed font-bold text-sm hover:bg-amber-400 active:scale-95 transition-transform shadow-lg shadow-amber-500/20"
-              >
-                Abrir Barra Interactiva
-              </button>
-            </div>
-          </div>
+        {activeTab === 'ajustes' && (
+          <SettingsView
+            monthlyPlan={monthlyPlan}
+            onOpenImportPlan={() => setIsImportModalOpen(true)}
+            onResetPlan={() => {
+              const defaultPlan = resetStoredMonthlyPlan();
+              setMonthlyPlan(defaultPlan);
+            }}
+            onOpenPlateCalculator={openPlateCalculator}
+            onTriggerRestTimer={triggerRestTimer}
+            onPlanUpdated={handleSavePlan}
+          />
         )}
       </main>
 

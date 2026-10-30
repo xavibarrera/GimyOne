@@ -215,7 +215,7 @@ export const ProgressionView: React.FC<ProgressionViewProps> = ({
 
         {/* Coach tip for the month */}
         <div className="text-[11px] text-zinc-400 leading-snug p-2.5 rounded-xl bg-zinc-950/50 border border-zinc-800/60">
-          💡 <span className="text-zinc-300 font-medium">Técnica clave:</span> {LIFT_OF_THE_MONTH.tips}
+          💡 <span className="text-zinc-300 font-medium">Técnica clave:</span> {lotm.tips || LIFT_OF_THE_MONTH.tips}
         </div>
       </div>
 

@@ -1,7 +1,7 @@
 import React from 'react';
-import { Dumbbell, Calendar, History, TrendingUp, Calculator } from 'lucide-react';
+import { Dumbbell, Calendar, History, TrendingUp, Settings } from 'lucide-react';
 
-export type NavTab = 'rutina' | 'historial' | 'memoria' | 'progresion' | 'calculadora';
+export type NavTab = 'rutina' | 'historial' | 'memoria' | 'progresion' | 'ajustes';
 
 interface NavigationProps {
   activeTab: NavTab;
@@ -14,7 +14,7 @@ export const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }
     { id: 'historial' as NavTab, label: 'Historial', icon: Calendar },
     { id: 'memoria' as NavTab, label: 'Pesos', icon: History },
     { id: 'progresion' as NavTab, label: 'Progresión', icon: TrendingUp },
-    { id: 'calculadora' as NavTab, label: 'Discos', icon: Calculator },
+    { id: 'ajustes' as NavTab, label: 'Ajustes', icon: Settings },
   ];
 
   return (
