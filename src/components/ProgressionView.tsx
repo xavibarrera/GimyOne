@@ -11,34 +11,43 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { WEEK_PHASES, LIFT_OF_THE_MONTH, ONE_WORKOUT_DAYS } from '../data/onePlanData';
-import { WeekPhase } from '../types/workout';
+import { WeekPhase, LiftOfTheMonth, DayWorkout } from '../types/workout';
 import { getExerciseHistoryList, getSessionLogs } from '../services/storage';
 
 interface ProgressionViewProps {
   currentWeek: WeekPhase;
+  monthName?: string;
+  liftOfTheMonth?: LiftOfTheMonth;
+  workoutDays?: DayWorkout[];
   onSelectWeek: (week: WeekPhase) => void;
   onOpenPlateCalculator: (exerciseName: string, currentWeight: number) => void;
 }
 
 export const ProgressionView: React.FC<ProgressionViewProps> = ({
   currentWeek,
+  monthName = 'OCTUBRE',
+  liftOfTheMonth,
+  workoutDays,
   onSelectWeek,
   onOpenPlateCalculator,
 }) => {
+  const lotm = liftOfTheMonth || LIFT_OF_THE_MONTH;
+  const days = workoutDays && workoutDays.length > 0 ? workoutDays : ONE_WORKOUT_DAYS;
+
   const historyList = getExerciseHistoryList();
   const sessionLogs = getSessionLogs();
 
-  // Trap Bar Deadlift specific records (Lift of the month)
-  const deadliftRecords = historyList
-    .filter((h) => h.exerciseId === 'trap_bar_deadlift')
+  // Lift of the month specific records
+  const lotmRecords = historyList
+    .filter((h) => h.exerciseId === lotm.exerciseId || h.exerciseId.includes(lotm.exerciseId))
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-  const currentTrapBarWeight = deadliftRecords[deadliftRecords.length - 1]?.weightKg || 0;
-  const initialTrapBarWeight = deadliftRecords[0]?.weightKg || 0;
+  const currentTrapBarWeight = lotmRecords[lotmRecords.length - 1]?.weightKg || 0;
+  const initialTrapBarWeight = lotmRecords[0]?.weightKg || 0;
   const deadliftDelta = currentTrapBarWeight - initialTrapBarWeight;
 
   // Estimated 1RM using Brzycki formula: Weight × (36 / (37 - reps))
-  const lastRecord = deadliftRecords[deadliftRecords.length - 1];
+  const lastRecord = lotmRecords[lotmRecords.length - 1];
   const estimated1RM = lastRecord && lastRecord.weightKg > 0
     ? Math.round(lastRecord.weightKg * (36 / (37 - (lastRecord.reps || 8))))
     : 0;
@@ -52,7 +61,7 @@ export const ProgressionView: React.FC<ProgressionViewProps> = ({
     core: 0,
   };
 
-  ONE_WORKOUT_DAYS.forEach((day) => {
+  days.forEach((day) => {
     day.exercises.forEach((ex) => {
       if (patternCounts[ex.pattern] !== undefined) {
         patternCounts[ex.pattern] += 1;
@@ -156,24 +165,24 @@ export const ProgressionView: React.FC<ProgressionViewProps> = ({
         })()}
       </div>
 
-      {/* LIFT OF THE MONTH CARD (Trap Bar Deadlift) */}
+      {/* LIFT OF THE MONTH CARD */}
       <div className="p-4 rounded-3xl bg-gradient-to-br from-zinc-900 via-zinc-900 to-amber-950/30 border border-amber-500/30 shadow-xl relative overflow-hidden">
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-1.5 text-[10px] font-bold text-amber-400 uppercase tracking-wider">
               <Award className="w-3.5 h-3.5" />
-              <span>{LIFT_OF_THE_MONTH.tagline}</span>
+              <span>{lotm.tagline || 'LIFT OF THE MONTH'}</span>
             </div>
             <h3 className="text-2xl font-condensed font-extrabold text-white tracking-wide mt-0.5">
-              {LIFT_OF_THE_MONTH.name}
+              {lotm.name}
             </h3>
             <div className="text-xs text-zinc-400 mt-0.5">
-              Rango de hipertrofia y fuerza: <span className="text-white font-mono-num font-semibold">3 × 6-8 reps</span>
+              Rango objetivo: <span className="text-white font-mono-num font-semibold">{lotm.targetReps || '3 × 6-8 reps'}</span>
             </div>
           </div>
 
           <button
-            onClick={() => onOpenPlateCalculator(LIFT_OF_THE_MONTH.name, currentTrapBarWeight)}
+            onClick={() => onOpenPlateCalculator(lotm.name, currentTrapBarWeight)}
             className="px-3 py-1.5 rounded-xl bg-amber-500 text-black text-xs font-bold hover:bg-amber-400 active:scale-95 transition-all shadow-md shadow-amber-500/20"
           >
             Cargar Discos

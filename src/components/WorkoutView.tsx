@@ -32,6 +32,7 @@ interface WorkoutViewProps {
   selectedDayId: string;
   onSelectDay: (dayId: string) => void;
   currentWeek: WeekPhase;
+  workoutDays?: DayWorkout[];
   onOpenPlateCalculator: (exerciseName: string, currentWeight: number, onApply?: (w: number) => void) => void;
   onOpenHistory: (exerciseId: string) => void;
   onOpenFinisherTimer: (dayTitle: string, finisher: DayWorkout['finisher']) => void;
@@ -42,12 +43,14 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
   selectedDayId,
   onSelectDay,
   currentWeek,
+  workoutDays,
   onOpenPlateCalculator,
   onOpenHistory,
   onOpenFinisherTimer,
   onTriggerRestTimer,
 }) => {
-  const currentDay = ONE_WORKOUT_DAYS.find((d) => d.id === selectedDayId) || ONE_WORKOUT_DAYS[0];
+  const days = workoutDays && workoutDays.length > 0 ? workoutDays : ONE_WORKOUT_DAYS;
+  const currentDay = days.find((d) => d.id === selectedDayId) || days[0];
 
   // Keep track of sets per exercise
   const [setsState, setSetsState] = useState<Record<string, ExerciseSet[]>>({});
@@ -248,7 +251,7 @@ export const WorkoutView: React.FC<WorkoutViewProps> = ({
     <div className="pb-28 pt-2 px-4 max-w-xl mx-auto space-y-4">
       {/* 5 DAYS SELECTOR (LUNES A VIERNES) */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-        {ONE_WORKOUT_DAYS.map((day) => {
+        {days.map((day) => {
           const isSelected = day.id === selectedDayId;
           return (
             <button

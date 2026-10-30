@@ -3,13 +3,15 @@ import { motion } from 'motion/react';
 import { Search, History, Calculator, TrendingUp, Sparkles, Filter, Dumbbell } from 'lucide-react';
 import { ONE_WORKOUT_DAYS } from '../data/onePlanData';
 import { getExerciseHistoryList, saveExerciseHistoryRecord } from '../services/storage';
-import { MovementPattern, ExerciseDefinition } from '../types/workout';
+import { MovementPattern, ExerciseDefinition, DayWorkout } from '../types/workout';
 
 interface WeightMemoryViewProps {
+  workoutDays?: DayWorkout[];
   onOpenPlateCalculator: (exerciseName: string, currentWeight: number) => void;
 }
 
 export const WeightMemoryView: React.FC<WeightMemoryViewProps> = ({
+  workoutDays,
   onOpenPlateCalculator,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -18,10 +20,12 @@ export const WeightMemoryView: React.FC<WeightMemoryViewProps> = ({
   const [newWeightInput, setNewWeightInput] = useState<string>('');
   const [newRepsInput, setNewRepsInput] = useState<string>('10');
 
+  const days = workoutDays && workoutDays.length > 0 ? workoutDays : ONE_WORKOUT_DAYS;
+
   // Collect all unique exercises across the ONE plan
   const allExercises = useMemo(() => {
     const map = new Map<string, ExerciseDefinition>();
-    ONE_WORKOUT_DAYS.forEach((day) => {
+    days.forEach((day) => {
       day.exercises.forEach((ex) => {
         if (!map.has(ex.id)) {
           map.set(ex.id, ex);
@@ -29,7 +33,7 @@ export const WeightMemoryView: React.FC<WeightMemoryViewProps> = ({
       });
     });
     return Array.from(map.values());
-  }, []);
+  }, [days]);
 
   const historyList = useMemo(() => getExerciseHistoryList(), [editingId]);
 

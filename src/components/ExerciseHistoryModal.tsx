@@ -4,23 +4,29 @@ import { X, History, TrendingUp, Calendar, Dumbbell } from 'lucide-react';
 import { getExerciseHistoryList } from '../services/storage';
 import { ONE_WORKOUT_DAYS } from '../data/onePlanData';
 
+import { DayWorkout } from '../types/workout';
+
 interface ExerciseHistoryModalProps {
   exerciseId: string | null;
+  workoutDays?: DayWorkout[];
   onClose: () => void;
   onOpenPlateCalculator: (exerciseName: string, weight: number) => void;
 }
 
 export const ExerciseHistoryModal: React.FC<ExerciseHistoryModalProps> = ({
   exerciseId,
+  workoutDays,
   onClose,
   onOpenPlateCalculator,
 }) => {
   if (!exerciseId) return null;
 
+  const days = workoutDays && workoutDays.length > 0 ? workoutDays : ONE_WORKOUT_DAYS;
+
   // Find exercise details
   let exerciseName = exerciseId;
   let exercisePattern = '';
-  for (const day of ONE_WORKOUT_DAYS) {
+  for (const day of days) {
     const match = day.exercises.find((e) => e.id === exerciseId);
     if (match) {
       exerciseName = match.name;

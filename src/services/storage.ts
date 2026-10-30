@@ -1,5 +1,6 @@
-import { SessionLog, WeekPhase, ExerciseHistoryRecord, ExerciseSet } from '../types/workout';
+import { SessionLog, WeekPhase, ExerciseHistoryRecord, ExerciseSet, MonthlyPlan } from '../types/workout';
 import { ONE_WORKOUT_DAYS } from '../data/onePlanData';
+import { createDefaultMonthlyPlan } from './csvPlanService';
 
 const STORAGE_KEYS = {
   CURRENT_WEEK: 'gimyone_current_week',
@@ -7,7 +8,40 @@ const STORAGE_KEYS = {
   SESSION_LOGS: 'gimyone_session_logs_v2', // v2 ensures zero legacy mock data
   EXERCISE_HISTORY: 'gimyone_exercise_history_v2', // v2 ensures zero legacy mock data
   CUSTOM_EXERCISE_ORDER: 'gimyone_exercise_order',
+  MONTHLY_PLAN: 'gimyone_monthly_plan',
 };
+
+export function getStoredMonthlyPlan(): MonthlyPlan {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.MONTHLY_PLAN);
+    if (!raw) return createDefaultMonthlyPlan();
+    const parsed = JSON.parse(raw);
+    if (parsed && parsed.monthName && Array.isArray(parsed.workoutDays) && parsed.workoutDays.length > 0) {
+      return parsed;
+    }
+    return createDefaultMonthlyPlan();
+  } catch (err) {
+    console.error('Error reading stored monthly plan, fallback to default', err);
+    return createDefaultMonthlyPlan();
+  }
+}
+
+export function setStoredMonthlyPlan(plan: MonthlyPlan): void {
+  try {
+    localStorage.setItem(STORAGE_KEYS.MONTHLY_PLAN, JSON.stringify(plan));
+  } catch (err) {
+    console.error('Error saving monthly plan', err);
+  }
+}
+
+export function resetStoredMonthlyPlan(): MonthlyPlan {
+  try {
+    localStorage.removeItem(STORAGE_KEYS.MONTHLY_PLAN);
+  } catch (err) {
+    console.error('Error clearing monthly plan', err);
+  }
+  return createDefaultMonthlyPlan();
+}
 
 // No mock data: starts 100% clean
 const SEED_HISTORY: ExerciseHistoryRecord[] = [];

@@ -6,28 +6,41 @@ import { PWAInstallButton } from './PWAInstallButton';
 
 interface HeaderProps {
   currentWeek: WeekPhase;
+  monthName: string;
   onOpenRestTimer: () => void;
   onSelectWeek: (w: WeekPhase) => void;
+  onOpenImportPlan: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   currentWeek,
+  monthName,
   onOpenRestTimer,
   onSelectWeek,
+  onOpenImportPlan,
 }) => {
   const currentPhase = WEEK_PHASES.find((p) => p.week === currentWeek) || WEEK_PHASES[1];
 
   return (
     <header className="sticky top-0 z-30 bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800/80 pt-safe">
       <div className="max-w-xl mx-auto h-14 px-4 flex items-center justify-between gap-3">
-        {/* Zone 1: Brand Wordmark */}
+        {/* Zone 1: Brand Wordmark & Month Button */}
         <div className="flex items-center gap-1.5 whitespace-nowrap shrink-0">
           <span className="text-xl font-condensed font-black tracking-wider text-white">
             GIMY<span className="text-amber-400">ONE</span>
           </span>
-          <span className="text-[10px] font-condensed tracking-widest text-zinc-500 uppercase border-l border-zinc-700 pl-1.5 ml-0.5">
-            OCTUBRE
-          </span>
+          <button
+            onClick={onOpenImportPlan}
+            className="flex items-center gap-1 px-1.5 py-0.5 rounded-md hover:bg-zinc-800 border-l border-zinc-700 ml-0.5 text-zinc-400 hover:text-amber-400 transition-colors"
+            title="Cambiar o importar rutina mensual"
+          >
+            <span className="text-[10px] font-condensed tracking-widest uppercase font-bold text-amber-400/90 hover:text-amber-300">
+              {monthName}
+            </span>
+            <svg className="w-2.5 h-2.5 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
         </div>
 
         {/* Zone 2: Current Week Phase Selector */}

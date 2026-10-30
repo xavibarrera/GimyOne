@@ -9,18 +9,23 @@ import { PlateCalculatorModal } from './components/PlateCalculatorModal';
 import { ExerciseHistoryModal } from './components/ExerciseHistoryModal';
 import { FinisherTimerModal } from './components/FinisherTimerModal';
 import { RestTimerOverlay } from './components/RestTimerOverlay';
-import { WeekPhase, DayWorkout } from './types/workout';
+import { WeekPhase, DayWorkout, MonthlyPlan } from './types/workout';
 import {
   getStoredWeekPhase,
   setStoredWeekPhase,
   getStoredSelectedDay,
   setStoredSelectedDay,
+  getStoredMonthlyPlan,
+  setStoredMonthlyPlan,
 } from './services/storage';
+import { ImportPlanModal } from './components/ImportPlanModal';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<NavTab>('rutina');
   const [currentWeek, setCurrentWeek] = useState<WeekPhase>(() => getStoredWeekPhase());
   const [selectedDayId, setSelectedDayId] = useState<string>(() => getStoredSelectedDay());
+  const [monthlyPlan, setMonthlyPlan] = useState<MonthlyPlan>(() => getStoredMonthlyPlan());
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   // Plate Calculator Modal state
   const [plateModalConfig, setPlateModalConfig] = useState<{
@@ -60,6 +65,16 @@ export default function App() {
     setStoredWeekPhase(week);
   };
 
+  const handleSavePlan = (newPlan: MonthlyPlan) => {
+    setMonthlyPlan(newPlan);
+    setStoredMonthlyPlan(newPlan);
+    if (!newPlan.workoutDays.some((d) => d.id === selectedDayId)) {
+      const firstDayId = newPlan.workoutDays[0]?.id || 'lunes';
+      setSelectedDayId(firstDayId);
+      setStoredSelectedDay(firstDayId);
+    }
+  };
+
   const openPlateCalculator = (
     exerciseName: string,
     currentWeight: number,
@@ -91,8 +106,10 @@ export default function App() {
       {/* Top Header */}
       <Header
         currentWeek={currentWeek}
+        monthName={monthlyPlan.monthName}
         onOpenRestTimer={() => triggerRestTimer(90)}
         onSelectWeek={handleSelectWeek}
+        onOpenImportPlan={() => setIsImportModalOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -102,6 +119,7 @@ export default function App() {
             selectedDayId={selectedDayId}
             onSelectDay={handleSelectDay}
             currentWeek={currentWeek}
+            workoutDays={monthlyPlan.workoutDays}
             onOpenPlateCalculator={openPlateCalculator}
             onOpenHistory={(exId) => setHistoryModalExerciseId(exId)}
             onOpenFinisherTimer={openFinisherTimer}
@@ -121,6 +139,7 @@ export default function App() {
 
         {activeTab === 'memoria' && (
           <WeightMemoryView
+            workoutDays={monthlyPlan.workoutDays}
             onOpenPlateCalculator={(name, weight) => openPlateCalculator(name, weight)}
           />
         )}
@@ -128,6 +147,9 @@ export default function App() {
         {activeTab === 'progresion' && (
           <ProgressionView
             currentWeek={currentWeek}
+            monthName={monthlyPlan.monthName}
+            liftOfTheMonth={monthlyPlan.liftOfTheMonth}
+            workoutDays={monthlyPlan.workoutDays}
             onSelectWeek={handleSelectWeek}
             onOpenPlateCalculator={(name, weight) => openPlateCalculator(name, weight)}
           />
@@ -156,6 +178,14 @@ export default function App() {
       {/* Bottom Sticky Navigation */}
       <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
 
+      {/* Monthly Plan Import / Export Modal */}
+      <ImportPlanModal
+        isOpen={isImportModalOpen}
+        currentPlan={monthlyPlan}
+        onClose={() => setIsImportModalOpen(false)}
+        onSavePlan={handleSavePlan}
+      />
+
       {/* Plate Calculator Modal */}
       <PlateCalculatorModal
         isOpen={plateModalConfig.isOpen}
@@ -168,6 +198,7 @@ export default function App() {
       {/* Exercise History Details Modal */}
       <ExerciseHistoryModal
         exerciseId={historyModalExerciseId}
+        workoutDays={monthlyPlan.workoutDays}
         onClose={() => setHistoryModalExerciseId(null)}
         onOpenPlateCalculator={(name, w) => openPlateCalculator(name, w)}
       />

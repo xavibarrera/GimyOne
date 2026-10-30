@@ -64,6 +64,22 @@ export interface DayWorkout {
   };
 }
 
+export interface LiftOfTheMonth {
+  name: string;
+  exerciseId: string;
+  tagline: string;
+  tips: string;
+  targetReps: string;
+}
+
+export interface MonthlyPlan {
+  monthName: string; // e.g. "OCTUBRE", "NOVIEMBRE"
+  blockName?: string; // e.g. "BASE - CONTROL - PROGRESIÓN"
+  liftOfTheMonth: LiftOfTheMonth;
+  workoutDays: DayWorkout[];
+}
+
+
 export interface ExerciseHistoryRecord {
   exerciseId: string;
   date: string;
