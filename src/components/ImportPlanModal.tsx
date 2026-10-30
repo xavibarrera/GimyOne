@@ -96,6 +96,23 @@ export const ImportPlanModal: React.FC<ImportPlanModalProps> = ({
     }
   };
 
+  const handleUpdateMonthName = (newName: string) => {
+    if (importPreview?.plan) {
+      const upper = newName.toUpperCase();
+      setImportPreview({
+        ...importPreview,
+        plan: {
+          ...importPreview.plan,
+          monthName: upper,
+          liftOfTheMonth: {
+            ...importPreview.plan.liftOfTheMonth,
+            tagline: `Lift of the Month · ${upper}`,
+          },
+        },
+      });
+    }
+  };
+
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = e.target.value;
     setCsvText(val);
@@ -268,14 +285,24 @@ export const ImportPlanModal: React.FC<ImportPlanModalProps> = ({
                     <span>Rutina válida detectada</span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className="bg-stone-900/80 p-2.5 rounded-xl border border-stone-800">
-                      <span className="text-stone-500 text-[10px] uppercase font-bold block">Mes</span>
-                      <span className="text-white font-bold text-sm tracking-wide">{importPreview.plan.monthName}</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    <div className="bg-stone-900/90 p-2.5 rounded-xl border border-stone-800 focus-within:border-amber-500/60 transition-colors">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-stone-400 text-[10px] uppercase font-bold tracking-wider">Mes del Programa</span>
+                        <span className="text-[10px] text-amber-400 font-mono">editable</span>
+                      </div>
+                      <input
+                        type="text"
+                        value={importPreview.plan.monthName}
+                        onChange={(e) => handleUpdateMonthName(e.target.value)}
+                        placeholder="EJ. NOVIEMBRE"
+                        className="w-full bg-stone-950 border border-stone-700 focus:border-amber-500 rounded-lg px-2.5 py-1 text-white font-bold text-sm tracking-wide uppercase outline-none transition-colors"
+                      />
                     </div>
-                    <div className="bg-stone-900/80 p-2.5 rounded-xl border border-stone-800">
-                      <span className="text-stone-500 text-[10px] uppercase font-bold block">Lift of the Month</span>
-                      <span className="text-amber-400 font-bold truncate block">{importPreview.plan.liftOfTheMonth.name}</span>
+                    <div className="bg-stone-900/90 p-2.5 rounded-xl border border-stone-800 flex flex-col justify-center">
+                      <span className="text-stone-400 text-[10px] uppercase font-bold tracking-wider block mb-1">Lift of the Month</span>
+                      <span className="text-amber-400 font-bold truncate block text-sm">{importPreview.plan.liftOfTheMonth.name}</span>
+                      <span className="text-[10px] text-stone-500 truncate">{importPreview.plan.liftOfTheMonth.targetReps}</span>
                     </div>
                   </div>
 
